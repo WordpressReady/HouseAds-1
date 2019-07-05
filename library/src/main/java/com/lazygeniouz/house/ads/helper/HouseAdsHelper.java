@@ -25,7 +25,7 @@ public class HouseAdsHelper {
             doc = Jsoup
                     .connect(url.trim())
                     .ignoreContentType(true)
-                    .timeout(3000)
+                    .timeout(5000) //FZSM from 3 to 5
                     .header("Connection", "keep-alive")
                     .header("Cache-Control", "max-age=0")
                     .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")

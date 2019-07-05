@@ -16,6 +16,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -38,14 +39,15 @@ public class HouseAdsInterstitial {
     private static AdListener mAdListener;
     private String url;
     private int lastLoaded = 0;
-
     private static boolean isAdLoaded = false;
-
     private static Bitmap bitmap;
     private static String packageName;
+    private ArrayList<String> categories;
 
-    public HouseAdsInterstitial(Context context) {
+    public HouseAdsInterstitial(Context context, String val) {
         this.mContext = context;
+        this.url=val;
+        categories = new ArrayList<String>();
     }
 
     public void setAdListener(AdListener adListener) {
@@ -73,6 +75,9 @@ public class HouseAdsInterstitial {
         return isAdLoaded;
     }
 
+    public void adCategory(String category){
+        categories.add(category);
+    }
 
     private void setUp(String val) {
         ArrayList<InterstitialModal> modalArrayList = new ArrayList<>();
@@ -81,16 +86,20 @@ public class HouseAdsInterstitial {
         try {
             JSONObject rootObject = new JSONObject(x);
             JSONArray array = rootObject.optJSONArray("apps");
+            String app_category="";
 
             for (int object = 0; object < array.length(); object++) {
                 JSONObject jsonObject = array.getJSONObject(object);
 
-                if (jsonObject.optString("app_adType").equals("interstitial")) {
-                    InterstitialModal interstitialModal = new InterstitialModal();
-                    interstitialModal.setInterstitialImageUrl(jsonObject.optString("app_interstitial_url"));
-                    interstitialModal.setPackageOrUrl(jsonObject.optString("app_uri"));
-                    modalArrayList.add(interstitialModal);
+                if (!jsonObject.optString("app_adType").equals("interstitial")) {
+                    continue;
                 }
+                if (excludeAds(jsonObject)) continue;
+
+                InterstitialModal interstitialModal = new InterstitialModal();
+                interstitialModal.setInterstitialImageUrl(jsonObject.optString("app_interstitial_url"));
+                interstitialModal.setPackageOrUrl(jsonObject.optString("app_uri"));
+                modalArrayList.add(interstitialModal);
             }
 
         } catch (JSONException e) { e.printStackTrace(); }
@@ -110,6 +119,41 @@ public class HouseAdsInterstitial {
             });
             packageName = modal.getPackageOrUrl();
         }
+    }
+
+    private boolean excludeAds(JSONObject jsonObject) {
+        String app_disabled;
+        String app_category;
+        //20190703: FZSM -Disable/enbale ads just adding app_disabled.
+        //This is a NEW feature, so if this options is not available, the ad is enabled by default.
+        //normally it would be: "app_disabled": "true". Valid values: "TRUE", "tRuE","true"," true", "True   "
+        // Any other value different than true would be false
+        app_disabled=jsonObject.optString("app_disabled","false").trim().toLowerCase();
+        if (app_disabled.equals("true")) {
+            Log.i("House Ads",jsonObject.optString("app_title","[No Name]") +  " ad is disabled and excluded");
+            return true;
+        }
+
+        //20190704: FZSM: Category Ads: filtering ads based on category.
+        //By default if ad does not have category, it is included.
+        //Example: ads for pregnancy won't be displayed in game apps. However we could display an add of a game in this app if we want (or not).
+        app_category = jsonObject.optString("app_category", Common.NO_CATEGORY);
+        if (app_category.equals(Common.NO_CATEGORY)) {
+            Log.i("House Ads", jsonObject.optString("app_title","[No Name]") +  " included because it has no category.");
+            return false; //If there is no categories, just add the ad.
+        }
+
+        //We have a category here. Notice that categories could be also empty
+        if (categories.size() ==0 ) {
+            Log.i("House Ads", jsonObject.optString("app_title","[No Name]") +  " included because there is no filter. Category: " + app_category);
+            return false;
+        }
+        if (categories.contains(app_category)) {
+            Log.i("House Ads", jsonObject.optString("app_title","[No Name]") +  " included because belongs to category " + app_category);
+            return false;
+        }
+        Log.i("House Ads", jsonObject.optString("app_title","[No Name]") +  " excluded, it belongs to category " + app_category);
+        return true;
     }
 
     public void show() {

@@ -6,6 +6,8 @@
 
 package com.lazygeniouz.house.ads.modal;
 
+import android.util.Log;
+
 public class DialogModal {
     private String iconUrl;
     private String appTitle;
@@ -76,7 +78,19 @@ public class DialogModal {
         return price;
     }
 
+    /**
+     * 20190703:FZSM Bug: if ad does not have an app_rating data in json, it will trigger an error
+     * I decided if the app does not have rating, it will have a 5 stars.
+     * This can change
+     * @return
+     */
     public float getRating() {
-        return Float.parseFloat(rating);
+
+        try {
+            return Float.parseFloat(rating);
+        } catch (NumberFormatException e) {
+            Log.i("House Ads Library", "DialogModal.getRating exception:" + e.getMessage());
+            return 5.0f;
+        }
     }
 }

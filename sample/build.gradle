@@ -28,3 +28,9 @@ dependencies {
     //implementation 'com.lazygeniouz:houseAds:1.2'
     implementation project(':library')
 }
+
+//20190703: FZSM currently there is the https://mvnrepository.com/artifact/com.lazygeniouz/houseAds version 1.4
+//Does have sense to include the library?
+//How do I convert this as my own library with version? Currently this version is 1.3
+
+//Latest is in https://github.com/ItzNotABug/HouseAds/blob/master/README.md
